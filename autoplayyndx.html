@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirecting to Yandex Music</title>
+    <script type="text/javascript">
+        function redirect() {
+            var userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            var yandexMusicLink = "https://music.yandex.ru/artist/21868458?utm_medium=copy_link";
+            
+            // Check if the user is on a mobile device
+            if (/android/i.test(userAgent)) {
+                window.location.href = yandexMusicLink;
+            } else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+                window.location.href = yandexMusicLink;
+            } else {
+                // For desktop or unsupported devices, use the web link
+                window.location.href = yandexMusicLink;
+            }
+        }
+    </script>
+</head>
+<body onload="redirect()">
+    <p>Redirecting to Yandex Music...</p>
+</body>
+</html>
