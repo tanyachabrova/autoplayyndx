@@ -5,18 +5,17 @@
     <script type="text/javascript">
         function redirect() {
             var userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            var webLink = "https://music.yandex.ru/album/33416599/track/131441112";
-            var androidAppLink = "intent://music.yandex.ru/track/131441112#Intent;scheme=https;package=ru.yandex.music;end;";
-            var iosAppLink = "yandexmusic://track/131441112"; // Might not work on iOS
+            var smartLink = "https://li.sten.to/dilarasupermodel"; // Replace with your ListenTo smart link
 
+            // Check if the user is on a mobile device
             if (/android/i.test(userAgent)) {
-                window.location.href = androidAppLink;
-                setTimeout(function () { window.location.href = webLink; }, 1000);
+                window.location.href = smartLink;
+                setTimeout(function () { window.location.href = smartLink; }, 1000);
             } else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-                window.location.href = iosAppLink;
-                setTimeout(function () { window.location.href = webLink; }, 1000);
+                window.location.href = smartLink;
+                setTimeout(function () { window.location.href = smartLink; }, 1000);
             } else {
-                window.location.href = webLink;
+                window.location.href = smartLink;
             }
         }
     </script>
