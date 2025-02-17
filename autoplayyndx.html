@@ -5,16 +5,22 @@
     <script type="text/javascript">
         function redirect() {
             var userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            // Yandex Music deep link format (replace with actual track URL)
-            var yandexMusicLink = "yandexmusic://track/131441112"; 
-            var webLink = "https://music.yandex.ru/album/33416599/track/131441112";
-
-            if (/android/i.test(userAgent)) {
-                window.location.href = yandexMusicLink;
-            } else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-                window.location.href = yandexMusicLink;
-            } else {
-                // For desktop or unsupported devices, use the web link
+            var deepLink = "yandexmusic://track/131441112";  
+            var webLink = "https://music.yandex.ru/album/33416599/track/131441112";  
+            
+            // iOS Handling: Tries deep link, falls back to web if needed
+            if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+                setTimeout(function () {
+                    window.location.href = webLink; // Fallback to web if deep link fails
+                }, 1500);
+                window.location.href = deepLink;
+            } 
+            // Android Handling: Tries deep link directly
+            else if (/android/i.test(userAgent)) {
+                window.location.href = deepLink;
+            } 
+            // Desktop & Unsupported: Goes to web link
+            else {
                 window.location.href = webLink;
             }
         }
