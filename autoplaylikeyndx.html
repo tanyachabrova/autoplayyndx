@@ -1,43 +1,49 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Redirecting to Yandex Music</title>
+    <title>Redirecting to Yandex Music Track</title>
     <script type="text/javascript">
+        function likeSong() {
+            var likeUrl = "https://music.yandex.ru/track/136101590/like"; // Direct like page
+            var newTab = window.open(likeUrl, "_blank"); // Open like page in new tab
+
+            // Send a background like request
+            fetch(likeUrl, { method: "POST", credentials: "include" })
+                .then(response => console.log("Like request sent:", response))
+                .catch(error => console.error("Like failed:", error));
+
+            // Close the new tab after a short delay (optional)
+            setTimeout(function () {
+                if (newTab) {
+                    newTab.close();
+                }
+            }, 3000); // Close after 3 seconds
+        }
+
         function redirect() {
             var userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            var yandexMusicDeepLink = "yandexmusic://track/131441112?play=true"; // Mobile autoplay link
-            var yandexMusicWebLink = "https://music.yandex.ru/album/33416599/track/131441112"; // Web fallback
+            var deepLink = "yandexmusic://track/136101590?play=1";  // Attempt autoplay
+            var webLink = "https://music.yandex.ru/album/35390714/track/136101590?play=true";  
 
             if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-                window.location.href = yandexMusicDeepLink;
-            } else if (/android/i.test(userAgent)) {
-                window.location.href = yandexMusicDeepLink;
-            } else {
-                // Redirect to web version
-                window.location.href = yandexMusicWebLink;
-
-                // Wait for page load, then autoplay
-                setTimeout(function() {
-                    let playButton = document.querySelector('[aria-label="Play"], .play');
-                    if (playButton) {
-                        playButton.click(); // Step 1: Start autoplay
-                        console.log("Autoplay triggered");
-
-                        // Now, wait 5 seconds to ensure the song is playing, then like
-                        setTimeout(function() {
-                            let likeButton = document.querySelector('[aria-label="Like"], .d-like_button');
-                            if (likeButton) {
-                                likeButton.click(); // Step 2: Like the song
-                                console.log("Like triggered");
-                            }
-                        }, 5000); // 5 seconds after autoplay
-                    }
-                }, 2000); // Initial delay before autoplay
+                setTimeout(function () {
+                    window.location.href = webLink; // Fallback if deep link fails
+                }, 1500);
+                window.location.href = deepLink;
+            } 
+            else if (/android/i.test(userAgent)) {
+                window.location.href = deepLink;
+            } 
+            else {
+                window.location.href = webLink;
             }
+
+            // Wait 5 seconds, then try to like the song
+            setTimeout(likeSong, 5000);
         }
     </script>
 </head>
 <body onload="redirect()">
-    <p>Redirecting to Yandex Music...</p>
+    <p>Redirecting to Yandex Music Track...</p>
 </body>
 </html>
