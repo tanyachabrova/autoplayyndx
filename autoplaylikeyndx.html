@@ -1,55 +1,57 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Redirecting to Yandex Music Track</title>
+    <title>Redirecting to Yandex Music</title>
     <script type="text/javascript">
-        function likeSong() {
-            var likeUrl = "https://music.yandex.ru/album/35390714/track/136101590"; // Full track page
-            
-            // Open track page where the like button exists
-            var likeTab = window.open(likeUrl, "_blank");
-
-            // Try clicking the "Like" button automatically
-            setTimeout(function () {
-                if (likeTab) {
-                    likeTab.document.addEventListener("DOMContentLoaded", function () {
-                        let likeButton = likeTab.document.querySelector('[aria-label="Like"], .d-like_button');
-                        if (likeButton) {
-                            likeButton.click(); // Simulate a like click
-                            console.log("✅ Liked the song successfully!");
-                        } else {
-                            console.log("❌ Like button not found.");
-                        }
-                    });
-                }
-            }, 3000); // Give the page time to load
+        var clientId = "YOUR_CLIENT_ID"; // Replace with your Yandex OAuth Client ID
+        var redirectUri = window.location.origin + window.location.pathname; // Current page
+        
+        function getAccessToken() {
+            var match = window.location.hash.match(/access_token=([^&]+)/);
+            if (match) {
+                var token = match[1];
+                localStorage.setItem("yandex_token", token); // Save token
+                history.replaceState({}, document.title, window.location.pathname); // Remove token from URL
+                return token;
+            }
+            return localStorage.getItem("yandex_token"); // Get stored token
         }
 
-        function redirect() {
-            var userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            var deepLink = "yandexmusic://track/136101590?play=1";  // Autoplay track in app
-            var webLink = "https://music.yandex.ru/album/35390714/track/136101590?play=true";  // Web fallback
+        async function likeAndRedirect() {
+            var trackId = "131441112"; // Track ID
+            var albumId = "33416599";  // Album ID
+            var token = getAccessToken();
 
-            // Mobile Redirects
-            if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-                setTimeout(function () {
-                    window.location.href = webLink; // Web fallback if deep link fails
-                }, 1500);
-                window.location.href = deepLink;
-            } 
-            else if (/android/i.test(userAgent)) {
-                window.location.href = deepLink;
-            } 
-            else {
-                window.location.href = webLink; // Web version for desktop
+            if (!token) {
+                window.location.href = `https://oauth.yandex.ru/authorize?response_type=token&client_id=${clientId}&redirect_uri=${redirectUri}`;
+                return;
             }
 
-            // Delay opening the like page so autoplay is not affected
-            setTimeout(likeSong, 5000); // Open like page after 5 seconds (ensures autoplay first)
+            // API request to like the track
+            try {
+                await fetch("https://api.music.yandex.net/users/library/likes/tracks/" + trackId, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": "OAuth " + token
+                    }
+                });
+                console.log("Track liked successfully!");
+            } catch (error) {
+                console.error("Failed to like the track:", error);
+            }
+
+            // Redirect to the Yandex Music app to play the song
+            var deepLink = "yandexmusic://track/" + trackId + "?play=1";
+            var webLink = "https://music.yandex.ru/album/" + albumId + "/track/" + trackId + "?play=true";
+
+            window.location.href = deepLink;
+            setTimeout(function () {
+                window.location.href = webLink; // Fallback if deep link fails
+            }, 1500);
         }
     </script>
 </head>
-<body onload="redirect()">
-    <p>Redirecting to Yandex Music Track...</p>
+<body onload="likeAndRedirect()">
+    <p>Redirecting to Yandex Music...</p>
 </body>
 </html>
