@@ -5,29 +5,25 @@
     <script type="text/javascript">
         function redirect() {
             var userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            var yandexMusicDeepLink = "yandexmusic://track/131441112?play=true"; // Auto-play track
-            var yandexMusicWebLink = "https://music.yandex.ru/album/33416599/track/131441112?play=true"; // Web fallback
+            var yandexMusicDeepLink = "yandexmusic://track/131441112?play=true"; // Autoplay track
+            var yandexMusicWebLink = "https://music.yandex.ru/album/33416599/track/131441112"; // Web fallback
 
-            // Check if the user is on an iPhone/iPad
             if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
                 window.location.href = yandexMusicDeepLink;
-            }
-            // Check if the user is on Android
-            else if (/android/i.test(userAgent)) {
+            } else if (/android/i.test(userAgent)) {
                 window.location.href = yandexMusicDeepLink;
-            }
-            // For desktop users or unsupported devices, redirect to the web player
-            else {
+            } else {
+                // Redirect to web version
                 window.location.href = yandexMusicWebLink;
-            }
+                
+                setTimeout(function() {
+                    var likeButton = document.querySelector('[aria-label="Like"], .d-like_button');
 
-            // Attempt to trigger a "like" using a delay (Only works on web)
-            setTimeout(function() {
-                var likeButton = document.querySelector('[aria-label="Like"]'); 
-                if (likeButton) {
-                    likeButton.click(); // Simulate a tap on the "Like" button
-                }
-            }, 3000); // 3s delay to allow the app to load
+                    if (likeButton) {
+                        likeButton.click(); // Like the song
+                    }
+                }, 3000); // Wait 3 seconds for the page to load
+            }
         }
     </script>
 </head>
