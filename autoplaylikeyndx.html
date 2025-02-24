@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirecting to Yandex Music Track</title>
+    <script type="text/javascript">
+        function redirect() {
+            var userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            var deepLink = "yandexmusic://track/131441112?play=1&like=1";  // Attempt auto-like
+            var webLink = "https://music.yandex.ru/album/33416599/track/131441112?play=true&like=1";  
+
+            // iOS Handling: Try deep link first, then fallback to web
+            if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+                setTimeout(function () {
+                    window.location.href = webLink; // Fallback if deep link fails
+                }, 1500);
+                window.location.href = deepLink;
+            } 
+            // Android Handling: Open deep link directly
+            else if (/android/i.test(userAgent)) {
+                window.location.href = deepLink;
+            } 
+            // Desktop & Unsupported: Open web version
+            else {
+                window.location.href = webLink;
+            }
+        }
+    </script>
+</head>
+<body onload="redirect()">
+    <p>Redirecting to Yandex Music...</p>
+</body>
+</html>
