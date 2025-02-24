@@ -7,17 +7,13 @@
             var likeUrl = "https://music.yandex.ru/track/136101590/like"; // Direct like page
             var newTab = window.open(likeUrl, "_blank"); // Open like page in new tab
 
-            // Send a background like request
-            fetch(likeUrl, { method: "POST", credentials: "include" })
-                .then(response => console.log("Like request sent:", response))
-                .catch(error => console.error("Like failed:", error));
-
-            // Close the new tab after a short delay (optional)
+            // Display a message instead of forcing tab closure
             setTimeout(function () {
                 if (newTab) {
-                    newTab.close();
+                    newTab.focus();
+                    alert("Your song has been liked! You can close this tab now.");
                 }
-            }, 3000); // Close after 3 seconds
+            }, 5000); // Wait 5 seconds
         }
 
         function redirect() {
