@@ -5,7 +5,7 @@
     <script type="text/javascript">
         function redirect() {
             var userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            var yandexMusicDeepLink = "yandexmusic://track/131441112?play=true"; // Mobile deep link with autoplay
+            var yandexMusicDeepLink = "yandexmusic://track/131441112?play=true"; // Mobile autoplay link
             var yandexMusicWebLink = "https://music.yandex.ru/album/33416599/track/131441112"; // Web fallback
 
             if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
@@ -15,35 +15,24 @@
             } else {
                 // Redirect to web version
                 window.location.href = yandexMusicWebLink;
-                
-                // Wait for page load, then autoplay and like
+
+                // Wait for page load, then autoplay
                 setTimeout(function() {
                     let playButton = document.querySelector('[aria-label="Play"], .play');
-                    let likeButton = document.querySelector('[aria-label="Like"], .d-like_button');
-
                     if (playButton) {
-                        playButton.click(); // Autoplay song
-                    }
+                        playButton.click(); // Step 1: Start autoplay
+                        console.log("Autoplay triggered");
 
-                    if (likeButton) {
-                        likeButton.click(); // Like the song
+                        // Now, wait 5 seconds to ensure the song is playing, then like
+                        setTimeout(function() {
+                            let likeButton = document.querySelector('[aria-label="Like"], .d-like_button');
+                            if (likeButton) {
+                                likeButton.click(); // Step 2: Like the song
+                                console.log("Like triggered");
+                            }
+                        }, 5000); // 5 seconds after autoplay
                     }
-                }, 5000); // Increased timeout to 5s
-
-                // Alternative method using MutationObserver
-                const observer = new MutationObserver(() => {
-                    let playButton = document.querySelector('[aria-label="Play"], .play');
-                    let likeButton = document.querySelector('[aria-label="Like"], .d-like_button');
-
-                    if (playButton) {
-                        playButton.click();
-                    }
-                    if (likeButton) {
-                        likeButton.click();
-                    }
-                });
-
-                observer.observe(document.body, { childList: true, subtree: true });
+                }, 2000); // Initial delay before autoplay
             }
         }
     </script>
