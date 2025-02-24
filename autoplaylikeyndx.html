@@ -3,27 +3,16 @@
 <head>
     <title>Redirecting to Yandex Music Track</title>
     <script type="text/javascript">
-        function likeSong() {
-            var likeUrl = "https://music.yandex.ru/track/136101590/like"; // Direct like page
-            var newTab = window.open(likeUrl, "_blank"); // Open like page in new tab
-
-            // Display a message instead of forcing tab closure
-            setTimeout(function () {
-                if (newTab) {
-                    newTab.focus();
-                    alert("Your song has been liked! You can close this tab now.");
-                }
-            }, 5000); // Wait 5 seconds
-        }
-
         function redirect() {
             var userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            var deepLink = "yandexmusic://track/136101590?play=1";  // Attempt autoplay
-            var webLink = "https://music.yandex.ru/album/35390714/track/136101590?play=true";  
+            var deepLink = "yandexmusic://track/136101590?play=1";  // Autoplay track in app
+            var webLink = "https://music.yandex.ru/album/35390714/track/136101590?play=true";  // Web fallback
+            var likeLink = "https://music.yandex.ru/track/136101590/like"; // Like page
 
+            // Mobile Redirects
             if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
                 setTimeout(function () {
-                    window.location.href = webLink; // Fallback if deep link fails
+                    window.location.href = webLink; // Web fallback if deep link fails
                 }, 1500);
                 window.location.href = deepLink;
             } 
@@ -31,11 +20,13 @@
                 window.location.href = deepLink;
             } 
             else {
-                window.location.href = webLink;
+                window.location.href = webLink; // Web version for desktop
             }
 
-            // Wait 5 seconds, then try to like the song
-            setTimeout(likeSong, 5000);
+            // Delay opening the like page so autoplay is not affected
+            setTimeout(function () {
+                window.open(likeLink, "_blank"); // Open the like page in a new tab
+            }, 5000); // Open like page after 5 seconds (ensures autoplay first)
         }
     </script>
 </head>
