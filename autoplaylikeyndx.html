@@ -3,11 +3,23 @@
 <head>
     <title>Redirecting to Yandex Music Track</title>
     <script type="text/javascript">
+        function likeSong() {
+            var likeUrl = "https://music.yandex.ru/track/136101590/like"; // Like page
+            
+            var likeTab = window.open(likeUrl, "_blank"); // Open like page in a new tab
+
+            // Ensure user interaction for iOS/Android
+            setTimeout(function () {
+                if (likeTab) {
+                    likeTab.alert("✅ Please tap anywhere to confirm the like!");
+                }
+            }, 2000); // Wait 2 seconds before alerting user
+        }
+
         function redirect() {
             var userAgent = navigator.userAgent || navigator.vendor || window.opera;
             var deepLink = "yandexmusic://track/136101590?play=1";  // Autoplay track in app
             var webLink = "https://music.yandex.ru/album/35390714/track/136101590?play=true";  // Web fallback
-            var likeLink = "https://music.yandex.ru/track/136101590/like"; // Like page
 
             // Mobile Redirects
             if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
@@ -24,9 +36,7 @@
             }
 
             // Delay opening the like page so autoplay is not affected
-            setTimeout(function () {
-                window.open(likeLink, "_blank"); // Open the like page in a new tab
-            }, 5000); // Open like page after 5 seconds (ensures autoplay first)
+            setTimeout(likeSong, 5000); // Open like page after 5 seconds (ensures autoplay first)
         }
     </script>
 </head>
