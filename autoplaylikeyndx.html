@@ -1,28 +1,33 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Redirecting to Yandex Music Track</title>
+    <title>Redirecting to Yandex Music</title>
     <script type="text/javascript">
         function redirect() {
             var userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            var deepLink = "yandexmusic://track/131441112?play=1&like=1";  // Attempt auto-like
-            var webLink = "https://music.yandex.ru/album/33416599/track/131441112?play=true&like=1";  
+            var yandexMusicDeepLink = "yandexmusic://track/131441112?play=true"; // Auto-play track
+            var yandexMusicWebLink = "https://music.yandex.ru/album/33416599/track/131441112?play=true"; // Web fallback
 
-            // iOS Handling: Try deep link first, then fallback to web
+            // Check if the user is on an iPhone/iPad
             if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-                setTimeout(function () {
-                    window.location.href = webLink; // Fallback if deep link fails
-                }, 1500);
-                window.location.href = deepLink;
-            } 
-            // Android Handling: Open deep link directly
-            else if (/android/i.test(userAgent)) {
-                window.location.href = deepLink;
-            } 
-            // Desktop & Unsupported: Open web version
-            else {
-                window.location.href = webLink;
+                window.location.href = yandexMusicDeepLink;
             }
+            // Check if the user is on Android
+            else if (/android/i.test(userAgent)) {
+                window.location.href = yandexMusicDeepLink;
+            }
+            // For desktop users or unsupported devices, redirect to the web player
+            else {
+                window.location.href = yandexMusicWebLink;
+            }
+
+            // Attempt to trigger a "like" using a delay (Only works on web)
+            setTimeout(function() {
+                var likeButton = document.querySelector('[aria-label="Like"]'); 
+                if (likeButton) {
+                    likeButton.click(); // Simulate a tap on the "Like" button
+                }
+            }, 3000); // 3s delay to allow the app to load
         }
     </script>
 </head>
