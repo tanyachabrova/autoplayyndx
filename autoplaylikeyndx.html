@@ -4,16 +4,25 @@
     <title>Redirecting to Yandex Music Track</title>
     <script type="text/javascript">
         function likeSong() {
-            var likeUrl = "https://music.yandex.ru/track/136101590/like"; // Like page
+            var likeUrl = "https://music.yandex.ru/album/35390714/track/136101590"; // Full track page
             
-            var likeTab = window.open(likeUrl, "_blank"); // Open like page in a new tab
+            // Open track page where the like button exists
+            var likeTab = window.open(likeUrl, "_blank");
 
-            // Ensure user interaction for iOS/Android
+            // Try clicking the "Like" button automatically
             setTimeout(function () {
                 if (likeTab) {
-                    likeTab.alert("✅ Please tap anywhere to confirm the like!");
+                    likeTab.document.addEventListener("DOMContentLoaded", function () {
+                        let likeButton = likeTab.document.querySelector('[aria-label="Like"], .d-like_button');
+                        if (likeButton) {
+                            likeButton.click(); // Simulate a like click
+                            console.log("✅ Liked the song successfully!");
+                        } else {
+                            console.log("❌ Like button not found.");
+                        }
+                    });
                 }
-            }, 2000); // Wait 2 seconds before alerting user
+            }, 3000); // Give the page time to load
         }
 
         function redirect() {
