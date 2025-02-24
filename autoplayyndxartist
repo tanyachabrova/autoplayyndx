@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirecting to Yandex Music Artist</title>
+    <script type="text/javascript">
+        function redirect() {
+            var userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            var deepLink = "yandexmusic://artist/622784";  
+            var webLink = "https://music.yandex.ru/artist/622784";  
+            
+            // iOS Handling: Tries deep link, falls back to web if needed
+            if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+                setTimeout(function () {
+                    window.location.href = webLink; // Fallback to web if deep link fails
+                }, 1500);
+                window.location.href = deepLink;
+            } 
+            // Android Handling: Tries deep link directly
+            else if (/android/i.test(userAgent)) {
+                window.location.href = deepLink;
+            } 
+            // Desktop & Unsupported: Goes to web link
+            else {
+                window.location.href = webLink;
+            }
+        }
+    </script>
+</head>
+<body onload="redirect()">
+    <p>Redirecting to Yandex Music Artist...</p>
+</body>
+</html>
