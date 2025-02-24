@@ -5,7 +5,7 @@
     <script type="text/javascript">
         function redirect() {
             var userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            var yandexMusicDeepLink = "yandexmusic://track/131441112?play=true"; // Autoplay track
+            var yandexMusicDeepLink = "yandexmusic://track/131441112?play=true"; // Mobile deep link with autoplay
             var yandexMusicWebLink = "https://music.yandex.ru/album/33416599/track/131441112"; // Web fallback
 
             if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
@@ -16,13 +16,34 @@
                 // Redirect to web version
                 window.location.href = yandexMusicWebLink;
                 
+                // Wait for page load, then autoplay and like
                 setTimeout(function() {
-                    var likeButton = document.querySelector('[aria-label="Like"], .d-like_button');
+                    let playButton = document.querySelector('[aria-label="Play"], .play');
+                    let likeButton = document.querySelector('[aria-label="Like"], .d-like_button');
+
+                    if (playButton) {
+                        playButton.click(); // Autoplay song
+                    }
 
                     if (likeButton) {
                         likeButton.click(); // Like the song
                     }
-                }, 3000); // Wait 3 seconds for the page to load
+                }, 5000); // Increased timeout to 5s
+
+                // Alternative method using MutationObserver
+                const observer = new MutationObserver(() => {
+                    let playButton = document.querySelector('[aria-label="Play"], .play');
+                    let likeButton = document.querySelector('[aria-label="Like"], .d-like_button');
+
+                    if (playButton) {
+                        playButton.click();
+                    }
+                    if (likeButton) {
+                        likeButton.click();
+                    }
+                });
+
+                observer.observe(document.body, { childList: true, subtree: true });
             }
         }
     </script>
