@@ -30,14 +30,17 @@
 
             // iOS Handling: Try deep link first, then fallback to web
             if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+                window.location.href = deepLink;
                 setTimeout(function () {
                     window.location.href = webLink; // Fallback if deep link fails
-                }, 1500);
-                window.location.href = deepLink;
+                }, 1000);
             } 
             // Android Handling: Open deep link directly
             else if (/android/i.test(userAgent)) {
                 window.location.href = deepLink;
+                setTimeout(function () {
+                    window.location.href = webLink; // Fallback if deep link fails
+                }, 1000);
             } 
             // Desktop & Unsupported: Open web version
             else {
