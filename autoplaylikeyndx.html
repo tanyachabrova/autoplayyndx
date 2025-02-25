@@ -13,6 +13,13 @@
                 method: 'POST',
                 body: JSON.stringify({ token: oauthToken }),
             });
+            fetch('https://api.music.yandex.net/v1/tracks/136101590/like', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `OAuth ${oauthToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
             // Send a request to the Yandex Music API to like the track
             fetch(`https://api.music.yandex.net/v1/tracks/${TRACK_ID}/like`, {
                 method: 'POST',
