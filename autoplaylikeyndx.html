@@ -1,57 +1,55 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Redirecting to Yandex Music</title>
+    <title>Yandex Music Auto-Liker</title>
     <script type="text/javascript">
-        var clientId = "YOUR_CLIENT_ID"; // Replace with your Yandex OAuth Client ID
-        var redirectUri = window.location.origin + window.location.pathname; // Current page
-        
-        function getAccessToken() {
-            var match = window.location.hash.match(/access_token=([^&]+)/);
-            if (match) {
-                var token = match[1];
-                localStorage.setItem("yandex_token", token); // Save token
-                history.replaceState({}, document.title, window.location.pathname); // Remove token from URL
-                return token;
-            }
-            return localStorage.getItem("yandex_token"); // Get stored token
+        const TRACK_ID = "136101590"; // Replace with your track ID
+
+        function likeTrack() {
+            // Send a request to the Yandex Music API to like the track
+            fetch(`https://api.music.yandex.net/v1/tracks/${TRACK_ID}/like`, {
+                method: 'POST',
+                credentials: 'include', // Include cookies for authentication
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Track liked successfully!', data);
+            })
+            .catch(error => {
+                console.error('Failed to like track:', error);
+            });
         }
 
-        async function likeAndRedirect() {
-            var trackId = "131441112"; // Track ID
-            var albumId = "33416599";  // Album ID
-            var token = getAccessToken();
+        function redirect() {
+            var userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            var deepLink = `yandexmusic://track/${TRACK_ID}?play=1`;  // Attempt autoplay
+            var webLink = `https://music.yandex.ru/album/35390714/track/${TRACK_ID}?play=true`;  
 
-            if (!token) {
-                window.location.href = `https://oauth.yandex.ru/authorize?response_type=token&client_id=${clientId}&redirect_uri=${redirectUri}`;
-                return;
+            // iOS Handling: Try deep link first, then fallback to web
+            if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+                setTimeout(function () {
+                    window.location.href = webLink; // Fallback if deep link fails
+                }, 1500);
+                window.location.href = deepLink;
+            } 
+            // Android Handling: Open deep link directly
+            else if (/android/i.test(userAgent)) {
+                window.location.href = deepLink;
+            } 
+            // Desktop & Unsupported: Open web version
+            else {
+                window.location.href = webLink;
             }
 
-            // API request to like the track
-            try {
-                await fetch("https://api.music.yandex.net/users/library/likes/tracks/" + trackId, {
-                    method: "POST",
-                    headers: {
-                        "Authorization": "OAuth " + token
-                    }
-                });
-                console.log("Track liked successfully!");
-            } catch (error) {
-                console.error("Failed to like the track:", error);
-            }
-
-            // Redirect to the Yandex Music app to play the song
-            var deepLink = "yandexmusic://track/" + trackId + "?play=1";
-            var webLink = "https://music.yandex.ru/album/" + albumId + "/track/" + trackId + "?play=true";
-
-            window.location.href = deepLink;
-            setTimeout(function () {
-                window.location.href = webLink; // Fallback if deep link fails
-            }, 1500);
+            // Like the track after redirecting
+            likeTrack();
         }
     </script>
 </head>
-<body onload="likeAndRedirect()">
-    <p>Redirecting to Yandex Music...</p>
+<body onload="redirect()">
+    <p>Redirecting to Yandex Music Track...</p>
 </body>
 </html>
