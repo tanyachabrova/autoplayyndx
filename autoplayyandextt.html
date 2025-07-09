@@ -3,17 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Redirecting to Yandex Music</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    .hidden { display: none; }
-    body {
-      background: #000;
-      color: #fff;
-      font-family: sans-serif;
-      text-align: center;
-      padding: 50px;
-    }
-  </style>
   <script type="text/javascript">
     function redirect() {
       var ua        = navigator.userAgent || navigator.vendor || window.opera;
@@ -26,6 +15,7 @@
 
       if (isiOS) {
         if (isTikTok) {
+          // TikTok на iOS — симулируем клик
           var a = document.createElement('a');
           a.href = deeplink;
           a.style.display = 'none';
@@ -52,6 +42,7 @@
             }, 1000);
           }, 1000);
         } else {
+          // Обычный iOS
           window.location.href = deeplink;
           setTimeout(function () {
             window.location.href = weblink;
@@ -62,6 +53,7 @@
 
       if (isAndroid) {
         if (isTikTok) {
+          // TikTok на Android — через iframe
           var iframe = document.createElement('iframe');
           iframe.style.display = 'none';
           iframe.src = deeplink;
@@ -71,6 +63,7 @@
             window.location.href = weblink;
           }, 1500);
         } else {
+          // Обычный Android
           window.location.href = deeplink;
           setTimeout(function () {
             window.location.href = weblink;
@@ -79,13 +72,12 @@
         return;
       }
 
-      // fallback для десктопов
+      // Fallback: десктоп или неизвестное
       window.location.href = weblink;
     }
   </script>
 </head>
 <body onload="redirect()">
-  <h2>Открываем трек в Яндекс.Музыке…</h2>
-  <p>Если не открылось, <a href="https://music.yandex.com/album/37030460/track/140106826?utm_medium=copy_link">нажмите здесь</a>.</p>
+  <p>Redirecting to Yandex Music…</p>
 </body>
 </html>
