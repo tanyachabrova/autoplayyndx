@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Redirecting to Yandex Music</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    .hidden { display: none; }
+  </style>
+  <script type="text/javascript">
+    function redirect() {
+      var ua        = navigator.userAgent || navigator.vendor || window.opera;
+      var deeplink  = {{ .DEEPLINK }};   // e.g. "yandexmusic://album/123"
+      var weblink   = {{ .WEBLINK }};    // e.g. "https://music.yandex.com/album/123"
+
+      var isiOS     = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+      var isAndroid = /android/i.test(ua);
+      var isTikTok  = /tiktok/i.test(ua);
+
+      if (isiOS) {
+        if (isTikTok) {
+          // Для TikTok на iOS — симулируем клик по скрытой ссылке
+          var a = document.createElement('a');
+          a.href = deeplink;
+          a.style.display = 'none';
+          document.body.appendChild(a);
+
+          var evt = new MouseEvent('click', {
+            view: window,
+            bubbles: true,
+            cancelable: true
+          });
+
+          a.dispatchEvent(evt);
+
+          // fallback на Safari, если deep link не сработал
+          setTimeout(function () {
+            var vMatch   = ua.match(/OS (\d+)_/); // iOS version
+            var v        = vMatch ? parseInt(vMatch[1], 10) : 0;
+            var safari17 = 'x-safari-' + weblink.replace(/^https?:\/\//, 'https://');
+            var safari16 = 'com-apple-mobilesafari-tab:' + weblink;
+
+            window.location.href = (v >= 17) ? safari17 : safari16;
+
+            // последний fallback
+            setTimeout(function () {
+              window.location.href = weblink;
+            }, 1000);
+          }, 1000);
+        } else {
+          // Обычный iOS, не TikTok
+          window.location.href = deeplink;
+
+          setTimeout(function () {
+            window.location.href = weblink;
+          }, 1500);
+        }
+        return;
+      }
+
+      if (isAndroid) {
+        if (isTikTok) {
+          // Для TikTok на Android — используем iframe
+          var iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = deeplink;
+          document.body.appendChild(iframe);
+
+          setTimeout(function () {
+            window.location.href = weblink;
+          }, 1500);
+        } else {
+          // обычный Android
+          window.location.href = deeplink;
+          setTimeout(function () {
+            window.location.href = weblink;
+          }, 1500);
+        }
+        return;
+      }
+
+      // fallback для desktop и других устройств
+      window.location.href = weblink;
+    }
+  </script>
+</head>
+<body onload="redirect()">
+  <p>Redirecting to Yandex Music…</p>
+</body>
+</html>
