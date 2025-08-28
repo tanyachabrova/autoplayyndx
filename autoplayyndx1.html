@@ -4,11 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Открыть в Яндекс Музыке</title>
+
+  <!-- Анти-кэш (на всякий случай, если серверные заголовки недоступны) -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:24px;line-height:1.45}
     .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
     .btn{display:inline-block;padding:14px 18px;border:1px solid #ddd;border-radius:12px;text-decoration:none;font-weight:600}
     .hint{color:#666;margin-top:8px;font-size:14px}
+    .muted{color:#888;font-size:12px;margin-top:10px}
     .hidden{display:none}
   </style>
 </head>
@@ -20,11 +27,17 @@
     <a class="btn" id="openWeb" target="_blank" rel="noopener">Открыть в браузере</a>
   </div>
   <p id="tipInApp" class="hint hidden">Похоже, ссылка открыта внутри приложения (TikTok/Instagram и т. п.). Нажми «Открыть в приложении» или открой в системном браузере.</p>
+  <div class="muted">build: 2025-08-28-2</div>
 
   <script>
-    // ТВОИ ССЫЛКИ
-    const deeplink = "yandexmusic://album/23426057/track/103189404?play=1";
-    const weblink  = "https://music.yandex.com/album/23426057/track/103189404";
+    // ===== 0) Временная де-регистрация service worker (если ранее ставили) =====
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister())).catch(()=>{});
+    }
+
+    // ===== 1) ТВОИ ССЫЛКИ (жёстко) =====
+    const deeplink = "yandexmusic://track/136101590?play=1";
+    const weblink  = "https://music.yandex.ru/album/35390714/track/136101590";
 
     // Привязка кнопок
     const openAppEl = document.getElementById('openApp');
@@ -32,17 +45,18 @@
     openAppEl.href  = deeplink;
     openWebEl.href  = weblink;
 
-    // Детект окружения
+    // ===== 2) Детект окружения =====
     const ua        = navigator.userAgent || "";
     const ref       = document.referrer || "";
     const isiOS     = /iPad|iPhone|iPod/i.test(ua);
     const isAndroid = /Android/i.test(ua);
-    const isInApp   = /TikTok|Instagram|FBAN|FBAV|Line|Snapchat|Pinterest|WeChat|Twitter|Xiaomi/i.test(ua)
-                   || /tiktok\.com|instagram\.com|facebook\.com|lm\.facebook\.com/i.test(ref);
+    const isInApp   =
+      /TikTok|Instagram|FBAN|FBAV|Line|Snapchat|Pinterest|WeChat|Twitter|Xiaomi/i.test(ua) ||
+      /tiktok\.com|instagram\.com|facebook\.com|lm\.facebook\.com/i.test(ref);
 
     if (isInApp) document.getElementById('tipInApp').classList.remove('hidden');
 
-    // Возврат автоплея: мягкий фолбэк + отмена при уходе в фон
+    // ===== 3) «Возврат автоплея»: мягкий fallback + отмена, если страница ушла в фон =====
     let fellToBackground = false;
     let fbTimer = null;
     const start = Date.now();
@@ -57,13 +71,14 @@
     function scheduleFallback(ms) {
       fbTimer = setTimeout(() => {
         if (fellToBackground) return; // приложение уже открылось — не мешаем
-        if (Date.now() - start < ms + 120) location.href = weblink;
+        // если за ms+ чуть-чуть страница так и не скрылась, идём на веб
+        if (Date.now() - start < ms + 150) location.href = weblink;
       }, ms);
     }
 
-    // Автопопытка только вне in-app
+    // ===== 4) Автопопытка только вне in-app =====
     (function autoTry() {
-      if (isInApp) return; // в in-app ждём явный тап по кнопке
+      if (isInApp) return; // в in-app ждём явный тап — там WebView чаще блокирует автодействия
 
       if (isAndroid) {
         // intent:// чаще отдаёт фокус приложению и не срывает старт
@@ -71,7 +86,7 @@
           "#Intent;scheme=https;package=ru.yandex.music;" +
           "S.browser_fallback_url=" + encodeURIComponent(weblink) + ";end";
         try { location.href = intent; } catch(e) {}
-        scheduleFallback(2000); // подбери 1600–3000 мс по факту
+        scheduleFallback(2000); // подбирай 1600–3000 мс по факту
       } else if (isiOS) {
         try { location.href = deeplink; } catch(e) {}
         scheduleFallback(1800);
