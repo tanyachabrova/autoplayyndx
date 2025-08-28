@@ -1,32 +1,85 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="ru">
 <head>
-    <title>Redirecting to Yandex Music Track</title>
-    <script type="text/javascript">
-        function redirect() {
-            var userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            var deepLink = "yandexmusic://track/136101590?play=1";  // Attempt autoplay
-            var webLink = "https://music.yandex.ru/album/35390714/track/136101590?play=true";  
-
-            // iOS Handling: Try deep link first, then fallback to web
-            if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-                setTimeout(function () {
-                    window.location.href = webLink; // Fallback if deep link fails
-                }, 1500);
-                window.location.href = deepLink;
-            } 
-            // Android Handling: Open deep link directly
-            else if (/android/i.test(userAgent)) {
-                window.location.href = deepLink;
-            } 
-            // Desktop & Unsupported: Open web version
-            else {
-                window.location.href = webLink;
-            }
-        }
-    </script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Открыть в Яндекс Музыке</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:24px;line-height:1.45}
+    .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+    .btn{display:inline-block;padding:14px 18px;border:1px solid #ddd;border-radius:12px;text-decoration:none;font-weight:600}
+    .hint{color:#666;margin-top:8px;font-size:14px}
+    .hidden{display:none}
+  </style>
 </head>
-<body onload="redirect()">
-    <p>Redirecting to Yandex Music Track...</p>
+<body>
+  <h1>Открыть трек в Яндекс Музыке</h1>
+  <p class="hint">Если приложение не откроется автоматически, нажми кнопку ниже.</p>
+  <div class="row">
+    <a class="btn" id="openApp">Открыть в приложении ▶︎</a>
+    <a class="btn" id="openWeb" target="_blank" rel="noopener">Открыть в браузере</a>
+  </div>
+  <p id="tipInApp" class="hint hidden">Похоже, ссылка открыта внутри приложения (TikTok/Instagram и т. п.). Нажми «Открыть в приложении» или открой в системном браузере.</p>
+
+  <script>
+    // ТВОИ ССЫЛКИ
+    const deeplink = "yandexmusic://track/136101590?play=1";
+    const weblink  = "https://music.yandex.ru/album/35390714/track/136101590";
+
+    // Привязка кнопок
+    const openAppEl = document.getElementById('openApp');
+    const openWebEl = document.getElementById('openWeb');
+    openAppEl.href  = deeplink;
+    openWebEl.href  = weblink;
+
+    // Детект окружения
+    const ua        = navigator.userAgent || "";
+    const ref       = document.referrer || "";
+    const isiOS     = /iPad|iPhone|iPod/i.test(ua);
+    const isAndroid = /Android/i.test(ua);
+    const isInApp   = /TikTok|Instagram|FBAN|FBAV|Line|Snapchat|Pinterest|WeChat|Twitter|Xiaomi/i.test(ua)
+                   || /tiktok\.com|instagram\.com|facebook\.com|lm\.facebook\.com/i.test(ref);
+
+    if (isInApp) document.getElementById('tipInApp').classList.remove('hidden');
+
+    // Возврат автоплея: мягкий фолбэк + отмена при уходе в фон
+    let fellToBackground = false;
+    let fbTimer = null;
+    const start = Date.now();
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        fellToBackground = true;
+        if (fbTimer) { clearTimeout(fbTimer); fbTimer = null; }
+      }
+    }, { once: true });
+
+    function scheduleFallback(ms) {
+      fbTimer = setTimeout(() => {
+        if (fellToBackground) return; // приложение уже открылось — не мешаем
+        if (Date.now() - start < ms + 120) location.href = weblink;
+      }, ms);
+    }
+
+    // Автопопытка только вне in-app
+    (function autoTry() {
+      if (isInApp) return; // в in-app ждём явный тап по кнопке
+
+      if (isAndroid) {
+        // intent:// чаще отдаёт фокус приложению и не срывает старт
+        const intent = "intent://" + weblink.replace(/^https?:\/\//, "") +
+          "#Intent;scheme=https;package=ru.yandex.music;" +
+          "S.browser_fallback_url=" + encodeURIComponent(weblink) + ";end";
+        try { location.href = intent; } catch(e) {}
+        scheduleFallback(2000); // подбери 1600–3000 мс по факту
+      } else if (isiOS) {
+        try { location.href = deeplink; } catch(e) {}
+        scheduleFallback(1800);
+      } else {
+        // Desktop / прочее
+        location.href = weblink;
+      }
+    })();
+  </script>
 </body>
 </html>
