@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Открыть в Яндекс Музыке</title>
+
+  <!-- Анти-кэш для браузера; CDN всё равно лучше ломать сменой пути -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:24px;line-height:1.45}
+    .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+    .btn{display:inline-block;padding:14px 18px;border:1px solid #ddd;border-radius:12px;text-decoration:none;font-weight:600}
+    .hint{color:#666;margin-top:8px;font-size:14px}
+    .muted{color:#888;font-size:12px;margin-top:10px}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+  <h1>Открыть трек в Яндекс Музыке</h1>
+  <p class="hint">Если приложение не откроется автоматически, нажми кнопку ниже.</p>
+  <div class="row">
+    <a class="btn" id="openApp">Открыть в приложении ▶︎</a>
+    <a class="btn" id="openWeb" target="_blank" rel="noopener">Открыть в браузере</a>
+  </div>
+  <p id="tipInApp" class="hint hidden">Похоже, ссылка открыта внутри приложения (TikTok/Instagram и т. п.). Нажми «Открыть в приложении» или открой в системном браузере.</p>
+  <div class="muted">build: 2025-08-28-4 (gh-pages path bust)</div>
+
+  <script>
+    // 0) На всякий случай снимем SW (если он был в прошлых версиях)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister())).catch(()=>{});
+    }
+
+    // 1) ССЫЛКИ (жёстко под твой трек) + анти-"липкость" маршрутов
+    const VSTAMP       = '2025-08-28-4';
+    const deeplink = "yandexmusic://album/23426057/track/136101590?play=1";
+    const weblink  = "https://music.yandex.com/album/23426057/track/103189404";
+    const deeplink     = deeplinkBase + "&v=" + encodeURIComponent(VSTAMP);
+    const weblink      = weblinkBase  + (weblinkBase.includes('?') ? "&" : "?") + "v=" + encodeURIComponent(VSTAMP);
+
+    // UI
+    const openAppEl = document.getElementById('openApp');
+    const openWebEl = document.getElementById('openWeb');
+    openAppEl.href  = deeplink;
+    openWebEl.href  = weblink;
+
+    // 2) Детект окружения
+    const ua        = navigator.userAgent || "";
+    const ref       = document.referrer || "";
+    const isiOS     = /iPad|iPhone|iPod/i.test(ua);
+    const isAndroid = /Android/i.test(ua);
+    const isInApp   =
+      /TikTok|Instagram|FBAN|FBAV|Line|Snapchat|Pinterest|WeChat|Twitter|Xiaomi/i.test(ua) ||
+      /tiktok\.com|instagram\.com|facebook\.com|lm\.facebook\.com/i.test(ref);
+
+    if (isInApp) document.getElementById('tipInApp').classList.remove('hidden');
+
+    // 3) Возврат автоплея: мягкий fallback + отмена при уходе в фон
+    let fellToBackground = false;
+    let fbTimer = null;
+    const start = Date.now();
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        fellToBackground = true;
+        if (fbTimer) { clearTimeout(fbTimer); fbTimer = null; }
+      }
+    }, { once: true });
+
+    function scheduleFallback(ms) {
+      fbTimer = setTimeout(() => {
+        if (fellToBackground) return;
+        if (Date.now() - start < ms + 150) location.href = weblink;
+      }, ms);
+    }
+
+    // 4) Автопопытка только вне in-app
+    (function autoTry() {
+      if (isInApp) return; // в in-app ждём явный тап
+
+      if (isAndroid) {
+        // Интент на СХЕМУ yandexmusic://, чтобы не вызывался UL через https
+        const intent = "intent://track/136101590#Intent;scheme=yandexmusic;package=ru.yandex.music;end";
+        try { location.href = intent; } catch(e) {
+          try { location.href = deeplink; } catch(_) {}
+        }
+        scheduleFallback(2200);
+      } else if (isiOS) {
+        try { location.href = deeplink; } catch(e) {}
+        scheduleFallback(1800);
+      } else {
+        location.href = weblink;
+      }
+    })();
+  </script>
+</body>
+</html>
