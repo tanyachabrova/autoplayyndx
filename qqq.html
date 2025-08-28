@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Redirecting to Yandex Music</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <!-- Анти-кэш для браузеров; на GitHub Pages всё равно меняй путь/имя файла -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <style>
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; padding:24px; line-height:1.45; }
+    .hint { color:#666; font-size:14px; margin-top:8px }
+    .muted { color:#888; font-size:12px; margin-top:10px }
+  </style>
+
+  <script type="text/javascript">
+    function redirect() {
+      // ЖЁСТКО под этот трек
+      var deeplink = "yandexmusic://track/141816030?play=1";
+      var weblink  = "https://music.yandex.com/album/37773934/track/141816030";
+      // Альтернатива на случай «липкости» альбомного контекста:
+      // var weblink  = "https://music.yandex.com/track/141816030";
+
+      var ua        = navigator.userAgent || navigator.vendor || window.opera || "";
+      var isiOS     = /iPad|iPhone|iPod/i.test(ua);
+      var isAndroid = /Android/i.test(ua);
+
+      // Снимаем SW, если когда-то ставился, чтобы не влиял кэш
+      if ('serviceWorker' in navigator) {
+        try { navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())); } catch(_) {}
+      }
+
+      // Умный fallback: не перехватываем фокус, если приложение уже открылось
+      var fellToBackground = false;
+      var fbTimer = null;
+      var startTs = Date.now();
+
+      document.addEventListener('visibilitychange', function onVis() {
+        if (document.hidden) {
+          fellToBackground = true;
+          if (fbTimer) { clearTimeout(fbTimer); fbTimer = null; }
+        }
+      }, { once:true });
+
+      function scheduleFallback(ms) {
+        fbTimer = setTimeout(function() {
+          if (fellToBackground) return; // приложение открылось — не мешаем
+          if (Date.now() - startTs < ms + 150) window.location.href = weblink;
+        }, ms);
+      }
+
+      // ФЕЙКОВЫЙ ЖЕСТ («жест-шим»): первое касание/клик/клавиша → диплинк внутри обработчика
+      var shimTriggered = false;
+      function gestureShim() {
+        if (shimTriggered) return;
+        shimTriggered = true;
+        try { window.location.href = deeplink; } catch(e) {}
+        scheduleFallback(1800);
+      }
+      document.addEventListener('pointerdown', gestureShim, { once:true, passive:true });
+      document.addEventListener('touchstart', gestureShim,  { once:true, passive:true });
+      document.addEventListener('mousedown',  gestureShim,  { once:true, passive:true });
+      document.addEventListener('keydown',    gestureShim,  { once:true });
+
+      // Мягкая автопопытка (вне жеста) — не критично, shim подстрахует
+      if (isiOS) {
+        try { window.location.href = deeplink; } catch(e) {}
+        scheduleFallback(1800);
+      } else if (isAndroid) {
+        // intent на схему yandexmusic:// — «чистый» диплинк
+        try {
+          var intent = "intent://" +
+                       deeplink.replace(/^yandexmusic:\/\//, "").replace(/^\//, "") +
+                       "#Intent;scheme=yandexmusic;package=ru.yandex.music;end";
+          window.location.href = intent;
+        } catch(e) {
+          try { window.location.href = deeplink; } catch(_) {}
+        }
+        scheduleFallback(2200);
+      } else {
+        // Desktop / прочее
+        window.location.href = weblink;
+      }
+    }
+  </script>
+</head>
+<body onload="redirect()">
+  <p>Открываем Яндекс Музыку…</p>
+  <p class="hint">Если не запустилось автоматически — просто коснись экрана (это считается жестом) или открой <a href="https://music.yandex.com/album/37773934/track/141816030" rel="noopener">в браузере</a>.</p>
+  <div class="muted">build: 2025-08-28-6 (GH Pages test / fake-gesture)</div>
+</body>
+</html>
