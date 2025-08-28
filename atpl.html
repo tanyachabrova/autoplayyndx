@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Открыть в Яндекс Музыке</title>
 
-  <!-- Анти-кэш для браузера; CDN всё равно лучше ломать сменой пути -->
+  <!-- Анти-кэш для браузеров; для Pages всё равно меняем путь/имя -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -13,7 +13,7 @@
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:24px;line-height:1.45}
     .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
-    .btn{display:inline-block;padding:14px 18px;border:1px solid #ddd;border-radius:12px;text-decoration:none;font-weight:600}
+    .btn{display:inline-block;padding:14px 18px;border:1px solid #ddd;border-radius:12px;text-decoration:none;font-weight:600;cursor:pointer}
     .hint{color:#666;margin-top:8px;font-size:14px}
     .muted{color:#888;font-size:12px;margin-top:10px}
     .hidden{display:none}
@@ -23,78 +23,93 @@
   <h1>Открыть трек в Яндекс Музыке</h1>
   <p class="hint">Если приложение не откроется автоматически, нажми кнопку ниже.</p>
   <div class="row">
-    <a class="btn" id="openApp">Открыть в приложении ▶︎</a>
+    <button class="btn" id="openAppBtn" type="button">Открыть в приложении ▶︎</button>
     <a class="btn" id="openWeb" target="_blank" rel="noopener">Открыть в браузере</a>
   </div>
-  <p id="tipInApp" class="hint hidden">Похоже, ссылка открыта внутри приложения (TikTok/Instagram и т. п.). Нажми «Открыть в приложении» или открой в системном браузере.</p>
-  <div class="muted">build: 2025-08-28-4 (gh-pages path bust)</div>
+  <p id="tipInApp" class="hint hidden">Похоже, ссылка открыта внутри приложения (TikTok/Instagram и т. п.). Если «Открыть в приложении» не сработает, открой в системном браузере.</p>
+  <div class="muted">build: 2025-08-28-5 (gh-pages + JS click)</div>
 
   <script>
-    // 0) На всякий случай снимем SW (если он был в прошлых версиях)
+    // 0) На всякий случай снимем SW (если он когда-то был)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister())).catch(()=>{});
+      navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())).catch(()=>{});
     }
 
-    // 1) ССЫЛКИ (жёстко под твой трек) + анти-"липкость" маршрутов
-    const VSTAMP       = '2025-08-28-4';
-    const deeplink = "yandexmusic://album/23426057/track/136101590?play=1";
-    const weblink  = "https://music.yandex.com/album/23426057/track/103189404";
+    // 1) ССЫЛКИ (жёстко под трек)
+    const VSTAMP       = '2025-08-28-5';
+    const deeplinkBase = "yandexmusic://track/136101590?play=1";
+    const weblinkBase  = "https://music.yandex.ru/track/136101590";
     const deeplink     = deeplinkBase + "&v=" + encodeURIComponent(VSTAMP);
     const weblink      = weblinkBase  + (weblinkBase.includes('?') ? "&" : "?") + "v=" + encodeURIComponent(VSTAMP);
 
-    // UI
-    const openAppEl = document.getElementById('openApp');
-    const openWebEl = document.getElementById('openWeb');
-    openAppEl.href  = deeplink;
-    openWebEl.href  = weblink;
+    // 2) Элементы
+    const openAppBtn = document.getElementById('openAppBtn');
+    const openWebEl  = document.getElementById('openWeb');
+    openWebEl.href   = weblink;
 
-    // 2) Детект окружения
+    // 3) Детект
     const ua        = navigator.userAgent || "";
     const ref       = document.referrer || "";
     const isiOS     = /iPad|iPhone|iPod/i.test(ua);
     const isAndroid = /Android/i.test(ua);
-    const isInApp   =
-      /TikTok|Instagram|FBAN|FBAV|Line|Snapchat|Pinterest|WeChat|Twitter|Xiaomi/i.test(ua) ||
-      /tiktok\.com|instagram\.com|facebook\.com|lm\.facebook\.com/i.test(ref);
-
+    const isInApp   = /TikTok|Instagram|FBAN|FBAV|Line|Snapchat|Pinterest|WeChat|Twitter|Xiaomi/i.test(ua)
+                   || /tiktok\.com|instagram\.com|facebook\.com|lm\.facebook\.com/i.test(ref);
     if (isInApp) document.getElementById('tipInApp').classList.remove('hidden');
 
-    // 3) Возврат автоплея: мягкий fallback + отмена при уходе в фон
-    let fellToBackground = false;
-    let fbTimer = null;
-    const start = Date.now();
+    // 4) Обработчик клика — работает даже там, где <a href="yandexmusic://"> блокируют
+    openAppBtn.addEventListener('click', () => {
+      let jumped = false;
 
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        fellToBackground = true;
-        if (fbTimer) { clearTimeout(fbTimer); fbTimer = null; }
-      }
-    }, { once: true });
+      // Попытка открытия приложения
+      try { window.location.href = deeplink; jumped = true; } catch(_) {}
 
-    function scheduleFallback(ms) {
-      fbTimer = setTimeout(() => {
-        if (fellToBackground) return;
-        if (Date.now() - start < ms + 150) location.href = weblink;
-      }, ms);
-    }
-
-    // 4) Автопопытка только вне in-app
-    (function autoTry() {
-      if (isInApp) return; // в in-app ждём явный тап
-
+      // На Android пробуем intent на схему, если вдруг заблокировали прямой переход
       if (isAndroid) {
-        // Интент на СХЕМУ yandexmusic://, чтобы не вызывался UL через https
-        const intent = "intent://track/136101590#Intent;scheme=yandexmusic;package=ru.yandex.music;end";
-        try { location.href = intent; } catch(e) {
-          try { location.href = deeplink; } catch(_) {}
+        setTimeout(() => {
+          if (document.hidden) return; // уже ушли в приложение
+          try {
+            const intent = "intent://track/136101590#Intent;scheme=yandexmusic;package=ru.yandex.music;end";
+            window.location.href = intent;
+          } catch(_) {}
+        }, 100);
+      }
+
+      // Фолбэк на веб, если за ~2с страница не ушла в фон
+      const started = Date.now();
+      const t = setTimeout(() => {
+        if (!document.hidden && Date.now() - started < 2100) {
+          window.location.href = weblink;
         }
-        scheduleFallback(2200);
+      }, 2000);
+
+      // Если страница ушла в фон — отменяем фолбэк
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) clearTimeout(t);
+      }, { once: true });
+    });
+
+    // 5) Автопопытка только вне in-app (можно отключить, если хочешь только по кнопке)
+    (function autoTry() {
+      if (isInApp) return; // в in-app часто блокируется автонавигация
+      const start = Date.now();
+      if (isAndroid) {
+        // намеренно используем intent на https-UL как «мягкий»
+        const intent = "intent://" + weblink.replace(/^https?:\/\//, "") +
+          "#Intent;scheme=https;package=ru.yandex.music;S.browser_fallback_url=" +
+          encodeURIComponent(weblink) + ";end";
+        try { location.href = intent; } catch(_) {}
+        setTimeout(() => {
+          if (!document.hidden && Date.now() - start < 2100) location.href = weblink;
+        }, 2000);
       } else if (isiOS) {
-        try { location.href = deeplink; } catch(e) {}
-        scheduleFallback(1800);
+        try { location.href = deeplink; } catch(_) {}
+        setTimeout(() => {
+          if (!document.hidden && Date.now() - start < 1900) location.href = weblink;
+        }, 1800);
       } else {
         location.href = weblink;
       }
+      document.addEventListener('visibilitychange', () => { /* если ушли в апп — ок */ }, { once: true });
     })();
   </script>
 </body>
